@@ -1,17 +1,27 @@
 package com.hrms.utils;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
-import org.openqa.selenium.WebDriver;
+import org.apache.commons.io.FileUtils;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Select;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.testng.asserts.SoftAssert;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 public class CommonMethods {
-    protected static WebDriver driver;
+    public static WebDriver driver;
 
     /**
      * This method will open a browser ,set up configuration and navigate to url
@@ -22,11 +32,11 @@ public class CommonMethods {
         ConfigsReader.readProperties(Constants.CONFIGURATION_FILEPATH);
         switch (ConfigsReader.getPropertyValue("browser").toLowerCase()) {
             case "chrome":
-               WebDriverManager.chromedriver().setup();
+                WebDriverManager.chromedriver().setup();
                 driver = new ChromeDriver();
                 break;
             case "firefox":
-               WebDriverManager.firefoxdriver().setup();
+                WebDriverManager.firefoxdriver().setup();
                 driver = new FirefoxDriver();
                 break;
             default:
@@ -41,15 +51,121 @@ public class CommonMethods {
      * This method will close open browser
      */
     @AfterMethod(alwaysRun = true)
-    public static void tearDown(){
-        if(driver!=null){
+    public static void tearDown() {
+        if (driver != null) {
             driver.quit();
         }
     }
 
     @Test
-    public void test(){
-
+    public void test() {
         System.out.println(System.getProperty("user.dir"));
+    }
+
+    /**
+     * this method will clear a textbox and only then send text to it
+     *
+     * @param element
+     * @param textToSend
+     */
+    public static void sendText(WebElement element, String textToSend) {
+        element.clear();
+        element.sendKeys(textToSend);
+    }
+
+    /**
+     * this method will return an Object of Explicit wait
+     *
+     * @return
+     */
+    public static WebDriverWait getWait() {
+        WebDriverWait wait = new WebDriverWait(driver, Constants.EXPLICIT_WAIT);
+
+        return wait;
+    }
+
+    /**
+     * this method will wait until given element becomes clickable
+     *
+     * @param element
+     */
+
+    public static void waitForClickability(WebElement element) {
+        getWait().until(ExpectedConditions.elementToBeClickable(element));
+    }
+
+    /**
+     * this method will wait until element will become clickable and then it will click
+     *
+     * @param element
+     */
+    public static void click(WebElement element) {
+        waitForClickability(element);
+        element.click();
+    }
+
+    /**
+     * this method will return Object of SoftAssert
+     *
+     * @return
+     */
+    public static SoftAssert getSoftAssertion() {
+        SoftAssert softAssert = new SoftAssert();
+        return softAssert;
+    }
+
+    /**
+     * This method will return an Object of JavascriptExecutor
+     *
+     * @return
+     */
+
+    public static JavascriptExecutor getJSExecutor() {
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        return js;
+    }
+
+    /**
+     * This method will perform click with JavaScriptExecutor
+     *
+     * @param element
+     */
+    public static void JSClick(WebElement element) {
+        getJSExecutor().executeScript("arguments[0].click();", element);
+    }
+
+    /**
+     * This method will return an Object of Select class
+     *
+     * @param element
+     * @return
+     */
+    public Select getSelect(WebElement element) {
+        Select select = new Select(element);
+        return select;
+    }
+
+
+    /**
+     * This method will take screenshot
+     *
+     * @param fileName
+     */
+    public static void takeScreenshot(String fileName) {
+        TakesScreenshot ts = (TakesScreenshot) driver;
+        File sourceFile = ts.getScreenshotAs(OutputType.FILE);
+
+        try {
+            FileUtils.copyFile(sourceFile, new File(Constants.SCREENSHOT_FILEPATH + fileName + getTimeStamp("yyyy-MM-dd-HH-mm-ss")+".png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public static String getTimeStamp(String pattern) {
+        Date date = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+        return sdf.format(date);
     }
 }
